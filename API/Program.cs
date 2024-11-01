@@ -1,5 +1,8 @@
+using API.Middleware;
+
 using Core.Interfaces;
 
+using Infrastructure;
 using Infrastructure.Data;
 
 using Microsoft.EntityFrameworkCore;
@@ -9,19 +12,21 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
-
-builder.Services.AddDbContext<StoreContext>(options => 
+builder.Services.AddDbContext<StoreContext>(opt =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
-
-
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
-
-
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddCors();
 
 var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+app.UseMiddleware<ExceptionMiddleware>();
+
+app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod()
+    .WithOrigins("http://localhost:4200", "https://localhost:4200"));
 
 app.MapControllers();
 
